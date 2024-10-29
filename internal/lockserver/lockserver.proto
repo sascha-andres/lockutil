@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package lockutility;
+
+option go_package = "github.com/sascha-andres/lockutility/internal/lockserver";  // Go-specific option to set the package namespace
+
+// The lock service definition
+service LockService {
+  // Request a lock
+  rpc RequestLock (LockRequest) returns (LockResponse);
+
+  // Release a lock
+  rpc ReleaseLock (ReleaseRequest) returns (ReleaseResponse);
+}
+
+// Message to request a lock
+message LockRequest {
+  string lock_name = 1;       // Name of the lock being requested
+  int32 timeout_seconds = 2;  // Optional: Timeout for lock acquisition (in seconds)
+  int32 pid = 3;              // Process ID of the requesting process
+}
+
+// Response message for lock request
+message LockResponse {
+  bool success = 1;           // True if lock was successfully acquired
+  string message = 2;         // Message providing additional details
+}
+
+// Message to release a lock
+message ReleaseRequest {
+  string lock_name = 1;       // Name of the lock to release
+  int32 pid = 2;              // Process ID of the releasing process
+}
+
+// Response message for lock release
+message ReleaseResponse {
+  bool success = 1;           // True if lock was successfully released
+  string message = 2;         // Message providing additional details
+}
+
