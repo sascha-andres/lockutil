@@ -38,7 +38,7 @@ func (lm *LockManager) RequestLock(name string, pid int32, timeoutSeconds int32)
 		if err == nil {
 			return nil
 		}
-		if errors.Is(err, types.ErrLockExists) {
+		if errors.Is(err, types.ErrLockExists) && timeoutSeconds == 0 {
 			return err
 		}
 
