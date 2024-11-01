@@ -30,6 +30,8 @@ const (
 
 	// defaultLockJame specifies the default name used for locking mechanisms
 	defaultLockJame = "default"
+
+	defaultTimeout = 0
 )
 
 // operationType represents different types of operations within the system.
@@ -53,6 +55,7 @@ var (
 	host     string
 	help     bool
 	verbose  bool
+	timeout  int
 )
 
 // init initializes the logger settings, environment, and command-line flags for the application.
@@ -65,6 +68,7 @@ func init() {
 	flag.StringVar(&port, "port", defaultPort, "The port to connect to")
 	flag.StringVar(&host, "host", defaultHost, "The host to connect to")
 	flag.StringVar(&lockName, "lock", defaultLockJame, "The name of the lock to acquire")
+	flag.IntVar(&timeout, "timeout", defaultTimeout, "The timeout in seconds for the lock")
 	flag.BoolVar(&help, "help", false, "Prints this help message")
 	flag.BoolVar(&verbose, "verbose", false, "Enables verbose logging")
 }
@@ -157,7 +161,7 @@ func acquire(client pb.LockServiceClient) error {
 func getLockParameters() (string, int32, int32) {
 	// Define lock request parameters
 	lockName := lockName
-	timeoutSeconds := int32(5) // TODO timeout default and flag
+	timeoutSeconds := int32(timeout) // TODO timeout default and flag
 	pid := int32(os.Getppid())
 	return lockName, timeoutSeconds, pid
 }
