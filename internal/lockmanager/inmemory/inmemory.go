@@ -21,7 +21,6 @@ func (i *InMemoryLocker) Lock(name string, pid int32) error {
 	if !exists || (exists && !lock.isLocked) {
 		// Acquire lock if it does not exist or is not currently locked
 		i.locks[name] = &lockInfo{pid: pid, isLocked: true}
-		i.mu.Unlock()
 		return nil
 	}
 	return types.ErrLockExists

@@ -20,7 +20,7 @@ import (
 const (
 
 	// defaultPort defines the default port used for the server connection.
-	defaultPort = ":50051"
+	defaultPort = "50051"
 
 	// defaultHost specifies the default hostname for the server connection.
 	defaultHost = "localhost"
@@ -80,10 +80,13 @@ func main() {
 		return
 	}
 	ot := operationType(0)
-	if len(flag.GetSeparated()) == 0 {
+	if verbose {
+		log.Printf("Flags: %v", flag.GetVerbs())
+	}
+	if len(flag.GetVerbs()) == 0 {
 		ot = opAcquire
 	} else {
-		if flag.GetSeparated()[0] == "release" {
+		if flag.GetVerbs()[0] == "release" {
 			ot = opRelease
 		}
 	}
@@ -99,6 +102,17 @@ func run(ot operationType) error {
 	if ot == opNone {
 		log.Println("Please specify no operation to lock or 'release' to release a lock")
 		return errors.New("no supported operation")
+	}
+
+	if verbose {
+		otString := "ERR"
+		if ot == opRelease {
+			otString = "release"
+		}
+		if ot == opAcquire {
+			otString = "acquire"
+		}
+		log.Printf("Running operation: %s", otString)
 	}
 
 	conn, err := grpc.NewClient(fmt.Sprintf("%s:%s", host, port), grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -127,6 +141,9 @@ func run(ot operationType) error {
 // release attempts to release a lock held by the current process using the provided LockServiceClient.
 func release(client pb.LockServiceClient) error {
 	lockName, _, pid := getLockParameters()
+	if verbose {
+		log.Printf("Releasing lock: %s, pid: %d", lockName, pid)
+	}
 	releaseResp, err := client.ReleaseLock(context.Background(), &pb.ReleaseRequest{LockName: lockName, Pid: pid})
 	if err != nil {
 		return err
@@ -142,6 +159,9 @@ func release(client pb.LockServiceClient) error {
 // If the lock is acquired successfully, the function will return nil. If not, an error or a failure message is printed.
 func acquire(client pb.LockServiceClient) error {
 	lockName, timeoutSeconds, pid := getLockParameters()
+	if verbose {
+		log.Printf("Acquiring lock: %s, timeout: %d, pid: %d", lockName, timeoutSeconds, pid)
+	}
 	req := &pb.LockRequest{
 		LockName:       lockName,
 		TimeoutSeconds: timeoutSeconds,
