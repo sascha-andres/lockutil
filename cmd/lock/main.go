@@ -73,6 +73,8 @@ func init() {
 	flag.BoolVar(&verbose, "verbose", false, "Enables verbose logging")
 }
 
+// main is the entry point of the application which parses command-line flags and determines the operation to execute.
+// It either runs the acquire or release operation based on the provided flags and handles any errors encountered.
 func main() {
 	flag.Parse()
 	if help {
