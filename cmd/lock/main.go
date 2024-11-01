@@ -64,7 +64,6 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
 
 	flag.SetEnvPrefix(strings.ToUpper(applicationName))
-	flag.SetSeparated()
 	flag.StringVar(&port, "port", defaultPort, "The port to connect to")
 	flag.StringVar(&host, "host", defaultHost, "The host to connect to")
 	flag.StringVar(&lockName, "lock", defaultLockJame, "The name of the lock to acquire")
