@@ -28,7 +28,7 @@ var (
 
 // init initializes the logger settings, environment, and command-line flags for the application.
 func init() {
-	log.SetPrefix(fmt.Sprintf("[%s] ", applicationName))
+	log.SetPrefix(fmt.Sprintf("[%s] ", strings.ToUpper(applicationName)))
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
 	flag.SetEnvPrefix(strings.ToUpper(applicationName))
 
