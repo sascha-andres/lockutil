@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/sascha-andres/reuse/flag"
@@ -152,6 +153,6 @@ func getLockParameters() (string, int32, int32) {
 	// Define lock request parameters
 	lockName := "default"      // TODO
 	timeoutSeconds := int32(5) // TODO timeout default and flag
-	pid := int32(0)            // TODO get parent pid
+	pid := int32(os.Getppid())
 	return lockName, timeoutSeconds, pid
 }
