@@ -14,8 +14,8 @@ var (
 type Locker interface {
 
 	// Lock attempts to acquire a lock identified by the given name and associated with the provided process ID (pid).
-	Lock(name string, pid int32) error
+	Lock(name string, pid int32, addr string) error
 
 	// Unlock releases the lock identified by the given name and associated with the provided process ID (pid). Returns an error if the unlock operation fails.
-	Unlock(name string, pid int32) error
+	Unlock(name string, pid int32, addr string) error
 }

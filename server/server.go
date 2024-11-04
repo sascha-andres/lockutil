@@ -3,6 +3,9 @@ package server
 import (
 	"context"
 	"log"
+	"strings"
+
+	"google.golang.org/grpc/peer"
 
 	"github.com/sascha-andres/lockutil/internal/lockmanager"
 
@@ -24,11 +27,12 @@ func NewLockServer(verbose bool) *LockServer {
 }
 
 // RequestLock handles lock requests from clients
-func (s *LockServer) RequestLock(_ context.Context, req *pb.LockRequest) (*pb.LockResponse, error) {
+func (s *LockServer) RequestLock(ctx context.Context, req *pb.LockRequest) (*pb.LockResponse, error) {
+	addr := extractRemote(ctx)
 	if s.verbose {
 		log.Printf("RequestLock request for %s from %d with timeout %d", req.GetLockName(), req.GetPid(), req.GetTimeoutSeconds())
 	}
-	err := s.manager.RequestLock(req.LockName, req.Pid, req.TimeoutSeconds)
+	err := s.manager.RequestLock(req.LockName, req.Pid, addr, req.TimeoutSeconds)
 	if err != nil {
 		log.Printf("RequestLock failed for %s from %d: %s", req.GetLockName(), req.GetPid(), err.Error())
 		return &pb.LockResponse{Success: false, Message: err.Error()}, nil
@@ -36,12 +40,24 @@ func (s *LockServer) RequestLock(_ context.Context, req *pb.LockRequest) (*pb.Lo
 	return &pb.LockResponse{Success: true, Message: "Lock acquired"}, nil
 }
 
+// extractRemote extracts the remote address from a context containing peer information and returns it as a string.
+func extractRemote(ctx context.Context) string {
+	p, _ := peer.FromContext(ctx)
+	addr := p.Addr.String()
+	lio := strings.LastIndex(addr, ":")
+	if lio > 0 {
+		addr = addr[:lio]
+	}
+	return addr
+}
+
 // ReleaseLock handles lock release requests from clients
-func (s *LockServer) ReleaseLock(_ context.Context, req *pb.ReleaseRequest) (*pb.ReleaseResponse, error) {
+func (s *LockServer) ReleaseLock(ctx context.Context, req *pb.ReleaseRequest) (*pb.ReleaseResponse, error) {
+	addr := extractRemote(ctx)
 	if s.verbose {
 		log.Printf("ReleaseLock request for %s from %d", req.GetLockName(), req.GetPid())
 	}
-	err := s.manager.ReleaseLock(req.LockName, req.Pid)
+	err := s.manager.ReleaseLock(req.LockName, req.Pid, addr)
 	if err != nil {
 		return &pb.ReleaseResponse{Success: false, Message: err.Error()}, nil
 	}

@@ -29,7 +29,7 @@ func NewLockManager(verbose bool) *LockManager {
 }
 
 // RequestLock attempts to acquire a lock with the given name and PID, waiting up to timeoutSeconds.
-func (lm *LockManager) RequestLock(name string, pid int32, timeoutSeconds int32) error {
+func (lm *LockManager) RequestLock(name string, pid int32, addr string, timeoutSeconds int32) error {
 	if timeoutSeconds < 0 {
 		return errors.New("timeoutSeconds must be greater than or equal to 0")
 	}
@@ -39,16 +39,16 @@ func (lm *LockManager) RequestLock(name string, pid int32, timeoutSeconds int32)
 	defer ticker.Stop()
 
 	for {
-		err := lm.locker.Lock(name, pid)
+		err := lm.locker.Lock(name, pid, addr)
 		if err == nil {
 			if lm.verbose {
-				log.Printf("Acquired lock for %s from %d", name, pid)
+				log.Printf("Acquired lock for %s from %s-%d", name, addr, pid)
 			}
 			return nil
 		}
 		if errors.Is(err, types.ErrLockExists) && timeoutSeconds == 0 {
 			if lm.verbose {
-				log.Printf("no lock for %s: already taken", name)
+				log.Printf("no lock for %s from %s-%d: already taken", name, addr, pid)
 			}
 			return nil
 		}
@@ -57,7 +57,7 @@ func (lm *LockManager) RequestLock(name string, pid int32, timeoutSeconds int32)
 		select {
 		case <-timeout:
 			if lm.verbose {
-				log.Printf("timeout before acquiring lock for %s", name)
+				log.Printf("timeout before acquiring lock for %s from %s-%d", name, addr, pid)
 			}
 			return nil
 		case <-ticker.C:
@@ -67,6 +67,6 @@ func (lm *LockManager) RequestLock(name string, pid int32, timeoutSeconds int32)
 }
 
 // ReleaseLock releases the lock for the given name and PID.
-func (lm *LockManager) ReleaseLock(name string, pid int32) error {
-	return lm.locker.Unlock(name, pid)
+func (lm *LockManager) ReleaseLock(name string, pid int32, addr string) error {
+	return lm.locker.Unlock(name, pid, addr)
 }
