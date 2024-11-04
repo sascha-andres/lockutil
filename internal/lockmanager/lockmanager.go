@@ -2,6 +2,7 @@ package lockmanager
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/sascha-andres/lockutil/internal/lockmanager/types"
@@ -36,15 +37,19 @@ func (lm *LockManager) RequestLock(name string, pid int32, timeoutSeconds int32)
 	for {
 		err := lm.locker.Lock(name, pid)
 		if err == nil {
+			log.Printf("Acquired lock for %s from %d", name,
+				pid)
 			return nil
 		}
 		if errors.Is(err, types.ErrLockExists) && timeoutSeconds == 0 {
+			log.Printf("no lock for %s: already taken", name)
 			return err
 		}
 
 		// Wait for the lock to be released or timeout
 		select {
 		case <-timeout:
+			log.Printf("timeout before acquiring lock for %s", name)
 			return errors.New("timeout exceeded while waiting to acquire lock")
 		case <-ticker.C:
 			// Retry acquiring the lock
