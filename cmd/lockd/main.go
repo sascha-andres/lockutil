@@ -66,6 +66,6 @@ func run() error {
 	// Register the lock service
 	pb.RegisterLockServiceServer(grpcServer, server.NewLockServer(verbose))
 
-	fmt.Printf("gRPC server running on port %q:%q...", host, port)
+	log.Printf("gRPC server running on port %q:%q...", host, port)
 	return grpcServer.Serve(lis)
 }

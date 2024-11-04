@@ -19,7 +19,7 @@ type LockServer struct {
 func NewLockServer(verbose bool) *LockServer {
 	return &LockServer{
 		verbose: verbose,
-		manager: lockmanager.NewLockManager(),
+		manager: lockmanager.NewLockManager(verbose),
 	}
 }
 
@@ -30,6 +30,7 @@ func (s *LockServer) RequestLock(_ context.Context, req *pb.LockRequest) (*pb.Lo
 	}
 	err := s.manager.RequestLock(req.LockName, req.Pid, req.TimeoutSeconds)
 	if err != nil {
+		log.Printf("RequestLock failed for %s from %d: %s", req.GetLockName(), req.GetPid(), err.Error())
 		return &pb.LockResponse{Success: false, Message: err.Error()}, nil
 	}
 	return &pb.LockResponse{Success: true, Message: "Lock acquired"}, nil

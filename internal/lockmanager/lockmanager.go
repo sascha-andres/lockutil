@@ -2,6 +2,7 @@ package lockmanager
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/sascha-andres/lockutil/internal/lockmanager/types"
@@ -14,12 +15,16 @@ type LockManager struct {
 
 	// locker provides methods for acquiring and releasing locks, typically used by the LockManager to manage named locks.
 	locker types.Locker
+
+	// verbose indicates whether to log detailed information about lock operations.
+	verbose bool
 }
 
 // NewLockManager creates a new LockManager instance
-func NewLockManager() *LockManager {
+func NewLockManager(verbose bool) *LockManager {
 	return &LockManager{
-		locker: inmemory.NewInMemoryLocker(),
+		locker:  inmemory.NewInMemoryLocker(),
+		verbose: verbose,
 	}
 }
 
@@ -36,16 +41,25 @@ func (lm *LockManager) RequestLock(name string, pid int32, timeoutSeconds int32)
 	for {
 		err := lm.locker.Lock(name, pid)
 		if err == nil {
+			if lm.verbose {
+				log.Printf("Acquired lock for %s from %d", name, pid)
+			}
 			return nil
 		}
 		if errors.Is(err, types.ErrLockExists) && timeoutSeconds == 0 {
-			return err
+			if lm.verbose {
+				log.Printf("no lock for %s: already taken", name)
+			}
+			return nil
 		}
 
 		// Wait for the lock to be released or timeout
 		select {
 		case <-timeout:
-			return errors.New("timeout exceeded while waiting to acquire lock")
+			if lm.verbose {
+				log.Printf("timeout before acquiring lock for %s", name)
+			}
+			return nil
 		case <-ticker.C:
 			// Retry acquiring the lock
 		}
