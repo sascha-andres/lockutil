@@ -40,6 +40,7 @@ func (s *LockServer) RequestLock(ctx context.Context, req *pb.LockRequest) (*pb.
 	return &pb.LockResponse{Success: true, Message: "Lock acquired"}, nil
 }
 
+// extractRemote extracts the remote address from a context containing peer information and returns it as a string.
 func extractRemote(ctx context.Context) string {
 	p, _ := peer.FromContext(ctx)
 	addr := p.Addr.String()
