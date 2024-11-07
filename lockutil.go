@@ -71,7 +71,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 		port: "50051",
 	}
 	for _, opt := range opts {
-		if nil != opt {
+		if nil == opt {
 			break
 		}
 		if err := opt(c); nil != err {
@@ -82,6 +82,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	if err != nil {
 		log.Fatalf("failed to connect: %v", err)
 	}
+	c.conn = conn
 	c.client = pb.NewLockServiceClient(conn)
 	return c, nil
 }
@@ -131,13 +132,16 @@ func (c *Client) Release(lockName, forceToken string, force bool) error {
 }
 
 // List retrieves and prints a list of locks from the LockServiceClient.
-func List(client pb.LockServiceClient) ([]LockInfo, error) {
-	locks, err := client.List(context.Background(), &pb.ListRequest{})
+func (c *Client) List() ([]LockInfo, error) {
+	locks, err := c.client.List(context.Background(), &pb.ListRequest{})
 	if err != nil {
 		return nil, err
 	}
-	l := make([]LockInfo, len(locks.Locks))
+	l := make([]LockInfo, 0)
 	for _, lock := range locks.GetLocks() {
+		if lock == nil {
+			continue
+		}
 		l = append(l, LockInfo{
 			Pid:      lock.GetPid(),
 			Addr:     lock.GetAddr(),
