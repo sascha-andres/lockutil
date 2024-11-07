@@ -70,3 +70,8 @@ func (lm *LockManager) RequestLock(name string, pid int32, addr string, timeoutS
 func (lm *LockManager) ReleaseLock(name string, pid int32, addr string) error {
 	return lm.locker.Unlock(name, pid, addr)
 }
+
+// GetLocks returns a slice of LockInfo representing all the current locks and their statuses.
+func (lm *LockManager) GetLocks() []types.LockInfo {
+	return lm.locker.GetLocks()
+}

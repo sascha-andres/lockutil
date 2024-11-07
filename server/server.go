@@ -63,3 +63,17 @@ func (s *LockServer) ReleaseLock(ctx context.Context, req *pb.ReleaseRequest) (*
 	}
 	return &pb.ReleaseResponse{Success: true, Message: "Lock released"}, nil
 }
+
+// List all locks
+func (s *LockServer) List(_ context.Context, _ *pb.ListRequest) (*pb.ListResponse, error) {
+	resp := &pb.ListResponse{Locks: make([]*pb.Lock, 0)}
+	for _, lock := range s.manager.GetLocks() {
+		resp.Locks = append(resp.Locks, &pb.Lock{
+			Name:   lock.Name,
+			Addr:   lock.Addr,
+			Pid:    lock.Pid,
+			Locked: lock.IsLocked,
+		})
+	}
+	return resp, nil
+}
