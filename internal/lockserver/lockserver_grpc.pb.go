@@ -26,6 +26,8 @@ type LockServiceClient interface {
 	RequestLock(ctx context.Context, in *LockRequest, opts ...grpc.CallOption) (*LockResponse, error)
 	// Release a lock
 	ReleaseLock(ctx context.Context, in *ReleaseRequest, opts ...grpc.CallOption) (*ReleaseResponse, error)
+	// List all locks
+	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 }
 
 type lockServiceClient struct {
@@ -54,6 +56,15 @@ func (c *lockServiceClient) ReleaseLock(ctx context.Context, in *ReleaseRequest,
 	return out, nil
 }
 
+func (c *lockServiceClient) List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error) {
+	out := new(ListResponse)
+	err := c.cc.Invoke(ctx, "/lockutility.LockService/List", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LockServiceServer is the server API for LockService service.
 // All implementations must embed UnimplementedLockServiceServer
 // for forward compatibility
@@ -62,6 +73,8 @@ type LockServiceServer interface {
 	RequestLock(context.Context, *LockRequest) (*LockResponse, error)
 	// Release a lock
 	ReleaseLock(context.Context, *ReleaseRequest) (*ReleaseResponse, error)
+	// List all locks
+	List(context.Context, *ListRequest) (*ListResponse, error)
 	mustEmbedUnimplementedLockServiceServer()
 }
 
@@ -74,6 +87,9 @@ func (UnimplementedLockServiceServer) RequestLock(context.Context, *LockRequest)
 }
 func (UnimplementedLockServiceServer) ReleaseLock(context.Context, *ReleaseRequest) (*ReleaseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReleaseLock not implemented")
+}
+func (UnimplementedLockServiceServer) List(context.Context, *ListRequest) (*ListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 func (UnimplementedLockServiceServer) mustEmbedUnimplementedLockServiceServer() {}
 
@@ -124,6 +140,24 @@ func _LockService_ReleaseLock_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LockService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LockServiceServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/lockutility.LockService/List",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LockServiceServer).List(ctx, req.(*ListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LockService_ServiceDesc is the grpc.ServiceDesc for LockService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -138,6 +172,10 @@ var LockService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReleaseLock",
 			Handler:    _LockService_ReleaseLock_Handler,
+		},
+		{
+			MethodName: "List",
+			Handler:    _LockService_List_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
