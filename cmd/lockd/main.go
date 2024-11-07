@@ -21,10 +21,11 @@ const (
 )
 
 var (
-	port    string
-	host    string
-	help    bool
-	verbose bool
+	port        string
+	host        string
+	secretToken string
+	help        bool
+	verbose     bool
 )
 
 // init initializes the logger settings, environment, and command-line flags for the application.
@@ -35,6 +36,7 @@ func init() {
 
 	flag.StringVar(&port, "port", defaultPort, "The port to listen on")
 	flag.StringVar(&host, "host", defaultHost, "The host to listen on")
+	flag.StringVar(&secretToken, "secret-token", "", "The secret token to use for forceful unlocks, empty to disable")
 	flag.BoolVar(&help, "help", false, "Prints this help message")
 	flag.BoolVar(&verbose, "verbose", false, "Enables verbose logging")
 }
@@ -64,7 +66,7 @@ func run() error {
 	grpcServer := grpc.NewServer()
 
 	// Register the lock service
-	pb.RegisterLockServiceServer(grpcServer, server.NewLockServer(verbose))
+	pb.RegisterLockServiceServer(grpcServer, server.NewLockServer(secretToken, verbose))
 
 	log.Printf("gRPC server running on port %q:%q...", host, port)
 	return grpcServer.Serve(lis)

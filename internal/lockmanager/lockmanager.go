@@ -75,3 +75,8 @@ func (lm *LockManager) ReleaseLock(name string, pid int32, addr string) error {
 func (lm *LockManager) GetLocks() []types.LockInfo {
 	return lm.locker.GetLocks()
 }
+
+// ReleaseLockByName releases the lock identified by its name.
+func (lm *LockManager) ReleaseLockByName(name string) error {
+	return lm.locker.UnlockByName(name)
+}

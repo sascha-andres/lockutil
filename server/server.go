@@ -14,15 +14,17 @@ import (
 
 type LockServer struct {
 	pb.UnimplementedLockServiceServer
-	manager *lockmanager.LockManager
-	verbose bool
+	manager     *lockmanager.LockManager
+	verbose     bool
+	secretToken string
 }
 
 // NewLockServer initializes a new LockServer
-func NewLockServer(verbose bool) *LockServer {
+func NewLockServer(token string, verbose bool) *LockServer {
 	return &LockServer{
-		verbose: verbose,
-		manager: lockmanager.NewLockManager(verbose),
+		verbose:     verbose,
+		manager:     lockmanager.NewLockManager(verbose),
+		secretToken: token,
 	}
 }
 
@@ -54,10 +56,21 @@ func extractRemote(ctx context.Context) string {
 // ReleaseLock handles lock release requests from clients
 func (s *LockServer) ReleaseLock(ctx context.Context, req *pb.ReleaseRequest) (*pb.ReleaseResponse, error) {
 	addr := extractRemote(ctx)
-	if s.verbose {
-		log.Printf("ReleaseLock request for %s from %d", req.GetLockName(), req.GetPid())
+	if req.GetForceToken() != "" && s.secretToken == "" {
+		return &pb.ReleaseResponse{Success: false, Message: "Forceful release deactivated"}, nil
 	}
-	err := s.manager.ReleaseLock(req.LockName, req.Pid, addr)
+	if req.GetForceToken() != "" && req.GetForceToken() != s.secretToken {
+		return &pb.ReleaseResponse{Success: false, Message: "Invalid secret token"}, nil
+	}
+	if s.verbose {
+		log.Printf("ReleaseLock request for %s from %d, is forced: %t", req.GetLockName(), req.GetPid(), req.GetForceToken() != "")
+	}
+	var err error
+	if req.GetForceToken() == "" {
+		err = s.manager.ReleaseLock(req.LockName, req.Pid, addr)
+	} else {
+		err = s.manager.ReleaseLockByName(req.LockName)
+	}
 	if err != nil {
 		return &pb.ReleaseResponse{Success: false, Message: err.Error()}, nil
 	}

@@ -130,6 +130,9 @@ func run(ot operationType) error {
 		if ot == opList {
 			otString = "list"
 		}
+		if ot == opForceRelease {
+			otString = "force-release"
+		}
 		log.Printf("Running operation: %s", otString)
 	}
 
@@ -181,7 +184,7 @@ func release(client pb.LockServiceClient, force bool) error {
 	if verbose {
 		log.Printf("Releasing lock: %s, pid: %d", name, pid)
 	}
-	releaseResp, err := client.ReleaseLock(context.Background(), &pb.ReleaseRequest{LockName: name, Pid: pid})
+	releaseResp, err := client.ReleaseLock(context.Background(), &pb.ReleaseRequest{LockName: name, Pid: pid, ForceToken: &forceToken})
 	if err != nil {
 		return err
 	}
