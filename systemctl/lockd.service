@@ -1,0 +1,10 @@
+[Unit]
+Description=lockd - lockutil damon
+
+[Service]
+Type=simple
+StandardOutput=journal
+ExecStart=/home/andres/.local/bin/lockd
+
+[Install]
+WantedBy=default.target
