@@ -47,6 +47,9 @@ const (
 
 	// opRelease represents an operation that releases resources or locks within the system.
 	opRelease
+
+	// opList represents aan operation to list all currently existing locks
+	opList
 )
 
 var (
@@ -90,6 +93,9 @@ func main() {
 		if flag.GetVerbs()[0] == "release" {
 			ot = opRelease
 		}
+		if flag.GetVerbs()[0] == "list" {
+			ot = opList
+		}
 	}
 
 	if err := run(ot); err != nil {
@@ -112,6 +118,9 @@ func run(ot operationType) error {
 		}
 		if ot == opAcquire {
 			otString = "acquire"
+		}
+		if ot == opList {
+			otString = "list"
 		}
 		log.Printf("Running operation: %s", otString)
 	}
@@ -136,7 +145,22 @@ func run(ot operationType) error {
 		return release(client)
 	}
 
+	if ot == opList {
+		return list(client)
+	}
+
 	return errors.New("no supported operation")
+}
+
+func list(client pb.LockServiceClient) error {
+	locks, err := client.List(context.Background(), &pb.ListRequest{})
+	if err != nil {
+		return err
+	}
+	for _, lock := range locks.GetLocks() {
+		fmt.Printf("%s: from pid %d on %s is locked: %t\n", lock.GetName(), lock.GetPid(), lock.GetAddr(), lock.GetLocked())
+	}
+	return nil
 }
 
 // release attempts to release a lock held by the current process using the provided LockServiceClient.
