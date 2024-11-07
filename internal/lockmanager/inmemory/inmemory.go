@@ -40,6 +40,23 @@ func (i *InMemoryLocker) Unlock(name string, pid int32, addr string) error {
 	return types.ErrStrangersLock
 }
 
+// GetLocks returns a slice of LockInfo representing all current locks managed by the InMemoryLocker.
+func (i *InMemoryLocker) GetLocks() []types.LockInfo {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+
+	locks := make([]types.LockInfo, 0, len(i.locks))
+	for name, lock := range i.locks {
+		locks = append(locks, types.LockInfo{
+			Pid:      lock.pid,
+			Addr:     lock.addr,
+			IsLocked: lock.isLocked,
+			Name:     name,
+		})
+	}
+	return locks
+}
+
 // lockInfo represents the lock status and the process ID (pid) holding the lock.
 type lockInfo struct {
 

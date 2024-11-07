@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	defaultPort     = ":50051"
+	defaultPort     = "50051"
 	defaultHost     = "localhost"
 	applicationName = "lockd"
 )
@@ -55,7 +55,7 @@ func main() {
 // run starts a gRPC server on the default host and port, registers the LockService, and begins serving client requests.
 func run() error {
 	// Set up a listener on port 50051
-	lis, err := net.Listen("tcp", fmt.Sprintf("%s%s", defaultHost, defaultPort))
+	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", host, port))
 	if err != nil {
 		return err
 	}
