@@ -11,6 +11,25 @@ service LockService {
 
   // Release a lock
   rpc ReleaseLock (ReleaseRequest) returns (ReleaseResponse);
+
+  // List all locks
+  rpc List (ListRequest) returns (ListResponse);
+}
+
+// Message to get locks
+message ListRequest {
+}
+ // A lock held in some point in time
+message Lock {
+  string name = 1; // name of lock
+  string addr = 2; // address of lock requester
+  int32 pid = 3;   // pid of lock requester
+  bool locked = 4; // currently locked
+}
+
+// Message returned by list request
+message ListResponse {
+  repeated Lock locks = 1; // exiting locks
 }
 
 // Message to request a lock
