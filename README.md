@@ -36,6 +36,10 @@ release lock
 
 list all active locks
 
+### force-release
+
+force a lock release, a secret token must be provided
+
 ## lock options
 
 ### -timeout
