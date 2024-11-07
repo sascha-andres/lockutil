@@ -22,6 +22,20 @@ echo "a"
 
 Will print 'a' only after script 1 has finished.
 
+## lock commands
+
+### no command
+
+acquire lock
+
+### release
+
+release lock
+
+### list
+
+list all active locks
+
 ## lock options
 
 ### -timeout
