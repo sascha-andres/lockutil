@@ -65,7 +65,11 @@ func (s *LockServer) ReleaseLock(ctx context.Context, req *pb.ReleaseRequest) (*
 }
 
 // List all locks
-func (s *LockServer) List(_ context.Context, _ *pb.ListRequest) (*pb.ListResponse, error) {
+func (s *LockServer) List(ctx context.Context, _ *pb.ListRequest) (*pb.ListResponse, error) {
+	addr := extractRemote(ctx)
+	if s.verbose {
+		log.Printf("Listrequest from %s", addr)
+	}
 	resp := &pb.ListResponse{Locks: make([]*pb.Lock, 0)}
 	for _, lock := range s.manager.GetLocks() {
 		resp.Locks = append(resp.Locks, &pb.Lock{
