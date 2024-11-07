@@ -50,15 +50,19 @@ const (
 
 	// opList represents aan operation to list all currently existing locks
 	opList
+
+	// opForceRelease indicates an operation that forcibly releases resources or locks, without checking the current state.
+	opForceRelease
 )
 
 var (
-	lockName string
-	port     string
-	host     string
-	help     bool
-	verbose  bool
-	timeout  int
+	lockName   string
+	port       string
+	host       string
+	forceToken string
+	help       bool
+	verbose    bool
+	timeout    int
 )
 
 // init initializes the logger settings, environment, and command-line flags for the application.
@@ -70,6 +74,7 @@ func init() {
 	flag.StringVar(&port, "port", defaultPort, "The port to connect to")
 	flag.StringVar(&host, "host", defaultHost, "The host to connect to")
 	flag.StringVar(&lockName, "lock", defaultLockJame, "The name of the lock to acquire")
+	flag.StringVar(&forceToken, "force-token", "", "The force token to use for force release")
 	flag.IntVar(&timeout, "timeout", defaultTimeout, "The timeout in seconds for the lock")
 	flag.BoolVar(&help, "help", false, "Prints this help message")
 	flag.BoolVar(&verbose, "verbose", false, "Enables verbose logging")
@@ -95,6 +100,9 @@ func main() {
 		}
 		if flag.GetVerbs()[0] == "list" {
 			ot = opList
+		}
+		if flag.GetVerbs()[0] == "force-release" {
+			ot = opForceRelease
 		}
 	}
 
@@ -141,8 +149,8 @@ func run(ot operationType) error {
 		return acquire(client)
 	}
 
-	if ot == opRelease {
-		return release(client)
+	if ot == opRelease || ot == opForceRelease {
+		return release(client, ot == opForceRelease)
 	}
 
 	if ot == opList {
@@ -152,6 +160,7 @@ func run(ot operationType) error {
 	return errors.New("no supported operation")
 }
 
+// list retrieves and prints a list of locks from the LockServiceClient.
 func list(client pb.LockServiceClient) error {
 	locks, err := client.List(context.Background(), &pb.ListRequest{})
 	if err != nil {
@@ -164,17 +173,20 @@ func list(client pb.LockServiceClient) error {
 }
 
 // release attempts to release a lock held by the current process using the provided LockServiceClient.
-func release(client pb.LockServiceClient) error {
-	lockName, _, pid := getLockParameters()
-	if verbose {
-		log.Printf("Releasing lock: %s, pid: %d", lockName, pid)
+func release(client pb.LockServiceClient, force bool) error {
+	if force && forceToken == "" {
+		return errors.New("force token is required")
 	}
-	releaseResp, err := client.ReleaseLock(context.Background(), &pb.ReleaseRequest{LockName: lockName, Pid: pid})
+	name, _, pid := getLockParameters()
+	if verbose {
+		log.Printf("Releasing lock: %s, pid: %d", name, pid)
+	}
+	releaseResp, err := client.ReleaseLock(context.Background(), &pb.ReleaseRequest{LockName: name, Pid: pid})
 	if err != nil {
 		return err
 	}
 	if !releaseResp.Success {
-		fmt.Printf("Failed to release lock: %s - %s\n", lockName, releaseResp.Message)
+		fmt.Printf("Failed to release lock: %s - %s\n", name, releaseResp.Message)
 	}
 	return nil
 }
