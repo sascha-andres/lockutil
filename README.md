@@ -73,3 +73,7 @@ The name of the lock to acquire, defaulting to 'default'
 
 ### - help
 Prints help message
+
+### secret-token
+
+pass to enable forcefully unlocks
