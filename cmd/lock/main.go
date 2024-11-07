@@ -2,19 +2,14 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
+	"github.com/sascha-andres/lockutil"
+
 	"github.com/sascha-andres/reuse/flag"
-	"google.golang.org/grpc/credentials/insecure"
-
-	pb "github.com/sascha-andres/lockutil/internal/lockserver" // Adjust the import path based on your project structure
-
-	"google.golang.org/grpc"
 )
 
 const (
@@ -136,60 +131,53 @@ func run(ot operationType) error {
 		log.Printf("Running operation: %s", otString)
 	}
 
-	conn, err := grpc.NewClient(fmt.Sprintf("%s:%s", host, port), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("failed to connect: %v", err)
-	}
+	l, err := lockutil.NewClient(lockutil.WithHost(host), lockutil.WithPort(port))
 	defer func() {
-		err = conn.Close()
+		err = l.Close()
 		if err != nil {
 			log.Printf("failed to close connection: %v", err)
 		}
 	}()
 
-	client := pb.NewLockServiceClient(conn)
 	if ot == opAcquire {
-		return acquire(client)
+		return acquire(l)
 	}
 
 	if ot == opRelease || ot == opForceRelease {
-		return release(client, ot == opForceRelease)
+		return release(l, ot == opForceRelease)
 	}
 
 	if ot == opList {
-		return list(client)
+		return list(l)
 	}
 
 	return errors.New("no supported operation")
 }
 
 // list retrieves and prints a list of locks from the LockServiceClient.
-func list(client pb.LockServiceClient) error {
-	locks, err := client.List(context.Background(), &pb.ListRequest{})
+func list(l *lockutil.Client) error {
+	locks, err := l.List()
 	if err != nil {
 		return err
 	}
-	for _, lock := range locks.GetLocks() {
-		fmt.Printf("%s: from pid %d on %s is locked: %t\n", lock.GetName(), lock.GetPid(), lock.GetAddr(), lock.GetLocked())
+	for _, lock := range locks {
+		fmt.Printf("%s: from pid %d on %s is locked: %t\n", lock.Name, lock.Pid, lock.Addr, lock.IsLocked)
 	}
 	return nil
 }
 
 // release attempts to release a lock held by the current process using the provided LockServiceClient.
-func release(client pb.LockServiceClient, force bool) error {
+func release(l *lockutil.Client, force bool) error {
 	if force && forceToken == "" {
 		return errors.New("force token is required")
 	}
-	name, _, pid := getLockParameters()
 	if verbose {
-		log.Printf("Releasing lock: %s, pid: %d", name, pid)
+		log.Printf("Releasing lock: %s", lockName)
 	}
-	releaseResp, err := client.ReleaseLock(context.Background(), &pb.ReleaseRequest{LockName: name, Pid: pid, ForceToken: &forceToken})
+
+	err := l.Release(lockName, forceToken, force)
 	if err != nil {
 		return err
-	}
-	if !releaseResp.Success {
-		fmt.Printf("Failed to release lock: %s - %s\n", name, releaseResp.Message)
 	}
 	return nil
 }
@@ -197,31 +185,9 @@ func release(client pb.LockServiceClient, force bool) error {
 // acquire attempts to obtain a lock by sending a request to the LockServiceClient.
 // It uses predefined lock parameters from getLockParameters() for lock name, timeout, and process ID.
 // If the lock is acquired successfully, the function will return nil. If not, an error or a failure message is printed.
-func acquire(client pb.LockServiceClient) error {
-	lockName, timeoutSeconds, pid := getLockParameters()
+func acquire(l *lockutil.Client) error {
 	if verbose {
-		log.Printf("Acquiring lock: %s, timeout: %d, pid: %d", lockName, timeoutSeconds, pid)
+		log.Printf("Acquiring lock: %s, timeout: %d", lockName, int32(timeout))
 	}
-	req := &pb.LockRequest{
-		LockName:       lockName,
-		TimeoutSeconds: timeoutSeconds,
-		Pid:            pid,
-	}
-	resp, err := client.RequestLock(context.Background(), req)
-	if err != nil {
-		return err
-	}
-	if !resp.Success {
-		fmt.Printf("Failed to acquire lock: %s - %s\n", lockName, resp.Message)
-	}
-	return nil
-}
-
-// getLockParameters returns the default lock parameters including lock name, timeout in seconds, and process ID.
-func getLockParameters() (string, int32, int32) {
-	// Define lock request parameters
-	lockName := lockName
-	timeoutSeconds := int32(timeout) // TODO timeout default and flag
-	pid := int32(os.Getppid())
-	return lockName, timeoutSeconds, pid
+	return l.Acquire(lockName, int32(timeout))
 }

@@ -72,8 +72,12 @@ The host address to listen on, defaulting to localhost
 The name of the lock to acquire, defaulting to 'default'
 
 ### - help
-Prints help message
+Prints a help message
 
 ### secret-token
 
 pass to enable forcefully unlocks
+
+## as a go package
+
+In `lockutil.go` a client library is provided for use in go applications.
