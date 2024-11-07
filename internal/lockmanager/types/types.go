@@ -35,6 +35,9 @@ type Locker interface {
 	// Unlock releases the lock identified by the given name and associated with the provided process ID (pid). Returns an error if the unlock operation fails.
 	Unlock(name string, pid int32, addr string) error
 
+	// UnlockByName releases the lock identified by the given name. Returns an error if the unlock operation fails.
+	UnlockByName(name string) error
+
 	// GetLocks returns a slice of LockInfo representing all the current locks and their statuses.
 	GetLocks() []LockInfo
 }

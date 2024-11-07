@@ -6,15 +6,24 @@ import (
 	"github.com/sascha-andres/lockutil/internal/lockmanager/types"
 )
 
-// InMemoryLocker is a simple in-memory lock manager.
-type InMemoryLocker struct {
+// Locker is a simple in-memory lock manager.
+type Locker struct {
 	mu    sync.Mutex
 	locks map[string]*lockInfo
 }
 
+// UnlockByName releases the lock identified by its name without considering the owner.
+// The method returns an error if the operation fails.
+func (i *Locker) UnlockByName(name string) error {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	delete(i.locks, name)
+	return nil
+}
+
 // Lock attempts to acquire a lock with the given name for the specified pid.
 // Returns ErrLockExists if the lock is already held.
-func (i *InMemoryLocker) Lock(name string, pid int32, addr string) error {
+func (i *Locker) Lock(name string, pid int32, addr string) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	lock, exists := i.locks[name]
@@ -28,7 +37,7 @@ func (i *InMemoryLocker) Lock(name string, pid int32, addr string) error {
 
 // Unlock attempts to release a lock identified by the name for the given pid.
 // Returns ErrStrangersLock if the lock is held by a different PID or does not exist.
-func (i *InMemoryLocker) Unlock(name string, pid int32, addr string) error {
+func (i *Locker) Unlock(name string, pid int32, addr string) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -41,7 +50,7 @@ func (i *InMemoryLocker) Unlock(name string, pid int32, addr string) error {
 }
 
 // GetLocks returns a slice of LockInfo representing all current locks managed by the InMemoryLocker.
-func (i *InMemoryLocker) GetLocks() []types.LockInfo {
+func (i *Locker) GetLocks() []types.LockInfo {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -71,8 +80,8 @@ type lockInfo struct {
 }
 
 // NewInMemoryLocker creates and initializes a new InMemoryLocker instance.
-func NewInMemoryLocker() *InMemoryLocker {
-	return &InMemoryLocker{
+func NewInMemoryLocker() *Locker {
+	return &Locker{
 		locks: make(map[string]*lockInfo),
 	}
 }
